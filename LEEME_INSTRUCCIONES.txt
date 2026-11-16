@@ -1,0 +1,22 @@
+=========================================================
+MYTHIC DASH: ODISEA EN EL OLIMPO - PROYECTO ANDROID READY
+=========================================================
+
+Este paquete contiene todo lo necesario para generar tu archivo .APK y .AAB para Google Play Store sin necesidad de configurar nada desde cero.
+
+--- OPCIÓN 1: COMPILAR GRATIS EN LA NUBE CON GITHUB (SIN INSTALAR NADA) ---
+1. Crea una cuenta gratuita en https://github.com y crea un nuevo repositorio llamado "mythic-dash".
+2. Descomprime este archivo ZIP y sube todos los archivos (incluyendo la carpeta oculta .github) a ese repositorio.
+3. Ve a la pestaña "Actions" de tu repositorio en GitHub.
+4. Verás un flujo llamado "Build Android APK & AAB" ejecutándose automáticamente.
+5. Al terminar (tarda ~2 minutos), haz clic en él y abajo en "Artifacts" podrás descargar:
+   - MythicDash-APK (para instalar directo en tu celular)
+   - MythicDash-GooglePlay-AAB (listo para subir a Google Play Console)
+
+--- OPCIÓN 2: COMPILAR EN TU COMPUTADORA CON ANDROID STUDIO ---
+1. Asegúrate de tener instalado Node.js y Android Studio.
+2. Abre una terminal en esta carpeta y ejecuta:
+   npm install
+   npx cap add android
+   npx cap open android
+3. En Android Studio, ve al menú superior: Build > Generate Signed Bundle / APK...

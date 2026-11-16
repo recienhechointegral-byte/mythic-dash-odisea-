@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Mythic Dash: Odisea en el Olimpo</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  body {
+    background: #0b0e17;
+    color: #fff;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  #hud {
+    position: absolute;
+    top: env(safe-area-inset-top, 16px);
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-box {
+    background: rgba(15, 22, 38, 0.78);
+    border: 1.5px solid rgba(255, 215, 0, 0.45);
+    border-radius: 14px;
+    padding: 8px 14px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.45);
+  }
+  .hud-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #ffd700;
+    opacity: 0.85;
+  }
+  .hud-val {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+  }
+  #power-banner {
+    position: absolute;
+    top: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, rgba(255,180,0,0.9), rgba(255,110,0,0.9));
+    color: #111;
+    font-weight: 900;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    display: none;
+    box-shadow: 0 0 20px rgba(255, 200, 0, 0.7);
+    z-index: 12;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(20, 30, 55, 0.92), rgba(8, 11, 20, 0.98));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 20;
+    text-align: center;
+  }
+  .hidden { display: none !important; }
+  h1 {
+    font-size: 32px;
+    font-weight: 900;
+    background: linear-gradient(180deg, #fff6b3 0%, #ffc400 55%, #ff8c00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 20px rgba(255, 180, 0, 0.35);
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #b8c7e0;
+    margin-bottom: 20px;
+  }
+  .btn {
+    background: linear-gradient(180deg, #ffd700, #ff9900);
+    color: #1a1100;
+    border: none;
+    border-radius: 16px;
+    padding: 14px 32px;
+    font-size: 17px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #b36200, 0 10px 25px rgba(255, 170, 0, 0.4);
+    margin: 8px;
+    transition: transform 0.1s;
+    width: 250px;
+  }
+  .btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #b36200;
+  }
+  .btn-secondary {
+    background: linear-gradient(180deg, #2d3e5e, #1c273d);
+    color: #ffd700;
+    border: 1.5px solid #ffd700;
+    box-shadow: 0 5px 0 #0f1624;
+  }
+  .btn-ad {
+    background: linear-gradient(180deg, #38ef7d, #11998e);
+    color: #04241a;
+    box-shadow: 0 5px 0 #09594b;
+  }
+  .shop-panel {
+    width: 100%;
+    max-width: 380px;
+    max-height: 62vh;
+    overflow-y: auto;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 18px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    text-align: left;
+  }
+  .shop-info h4 {
+    font-size: 14px;
+    color: #ffd700;
+  }
+  .shop-info p {
+    font-size: 11px;
+    color: #cbd5e1;
+  }
+  .shop-buy {
+    background: #ffd700;
+    color: #111;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 800;
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 82px;
+  }
+  .shop-buy:disabled {
+    background: #475569;
+    color: #94a3b8;
+  }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #10b981;
+    color: #032218;
+    font-weight: 800;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 13px;
+    z-index: 50;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div class="hud-box">
+    <div class="hud-label">Distancia</div>
+    <div class="hud-val" id="scoreVal">0m</div>
+  </div>
+  <div class="hud-box">
+    <div class="hud-label">Dracmas</div>
+    <div class="hud-val" id="coinVal">0</div>
+  </div>
+</div>
+
+<div id="power-banner">⚡ BENDICIÓN ACTIVA</div>
+
+<!-- MENÚ PRINCIPAL -->
+<div id="menuOverlay" class="overlay">
+  <h1>MYTHIC DASH</h1>
+  <div class="subtitle">ODISEA EN EL OLIMPO</div>
+  <div class="hud-box" style="margin-bottom: 18px; width: 250px;">
+    <div class="hud-label">Tesoro del Olimpo</div>
+    <div class="hud-val" id="bankCoins">0 Dracmas</div>
+    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;" id="bestScoreText">Récord: 0m</div>
+  </div>
+  <button class="btn" onclick="startGame()">▶ CORRER</button>
+  <button class="btn btn-secondary" onclick="openShop()">🏛️ TEMPLO DE MEJORAS</button>
+  <button class="btn btn-ad" onclick="watchRewardedAd('coins')">🎬 +150 DRACMAS (ANUNCIO)</button>
+</div>
+
+<!-- TIENDA -->
+<div id="shopOverlay" class="overlay hidden">
+  <h1>TEMPLO DE LOS DIOSES</h1>
+  <div class="subtitle">Mejora tus bendiciones y héroes</div>
+  <div style="margin-bottom: 10px; font-weight: 800; color: #ffd700;" id="shopCoins">0 Dracmas</div>
+  <div class="shop-panel" id="shopList"></div>
+  <button class="btn btn-secondary" onclick="closeShop()">⬅ VOLVER</button>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <h1>¡HAS CAÍDO!</h1>
+  <div class="subtitle" id="deathReason">La ira del Olimpo te alcanzó</div>
+  <div class="hud-box" style="margin-bottom: 16px; width: 250px;">
+    <div class="hud-label">Distancia Recorrida</div>
+    <div class="hud-val" id="finalScore">0m</div>
+    <div style="font-size: 13px; color: #ffd700; margin-top: 6px;" id="finalCoins">+0 Dracmas</div>
+  </div>
+  <button class="btn btn-ad" id="reviveBtn" onclick="watchRewardedAd('revive')">⚡ REVIVIR CON ESCUDO (AD)</button>
+  <button class="btn" onclick="startGame()">↻ JUGAR DE NUEVO</button>
+  <button class="btn btn-secondary" onclick="showMenu()">🏛️ MENÚ PRINCIPAL</button>
+</div>
+
+<div id="toast" class="toast"></div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Estado persistente (LocalStorage)
+let saveData = JSON.parse(localStorage.getItem('mythicDashSave')) || {
+  coins: 100,
+  bestScore: 0,
+  upgrades: {
+    zeus: 1,
+    hermes: 1,
+    athena: 1
+  },
+  heroes: {
+    perseo: true,
+    atalanta: false,
+    aquiles: false
+  },
+  selectedHero: 'perseo'
+};
+
+function saveGame() {
+  localStorage.setItem('mythicDashSave', JSON.stringify(saveData));
+  updateMenuUI();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2400);
+}
+
+// Variables de juego
+let gameState = 'MENU';
+let score = 0;
+let runCoins = 0;
+let speed = 11;
+let lane = 1; // 0, 1, 2
+let targetX = 0;
+let currentX = 0;
+let playerY = 0;
+let velocityY = 0;
+let isJumping = false;
+let isSliding = false;
+let slideTimer = 0;
+let activePower = null;
+let powerTimer = 0;
+let hasShield = false;
+let revivedThisRun = false;
+
+let obstacles = [];
+let coins = [];
+let powerups = [];
+let roadOffset = 0;
+
+function updateMenuUI() {
+  document.getElementById('bankCoins').textContent = `${saveData.coins} Dracmas`;
+  document.getElementById('bestScoreText').textContent = `Récord: ${Math.floor(saveData.bestScore)}m`;
+  document.getElementById('shopCoins').textContent = `Disponible: ${saveData.coins} Dracmas`;
+}
+updateMenuUI();
+
+function openShop() {
+  document.getElementById('menuOverlay').classList.add('hidden');
+  document.getElementById('shopOverlay').classList.remove('hidden');
+  renderShop();
+}
+
+function closeShop() {
+  document.getElementById('shopOverlay').classList.add('hidden');
+  document.getElementById('menuOverlay').classList.remove('hidden');
+  updateMenuUI();
+}
+
+function renderShop() {
+  const list = document.getElementById('shopList');
+  list.innerHTML = '';
+  const items = [
+    { id: 'zeus', type: 'upgrade', title: `Rayo de Zeus (Nvl ${saveData.upgrades.zeus})`, desc: 'Aumenta duración de destrucción', cost: saveData.upgrades.zeus * 120 },
+    { id: 'hermes', type: 'upgrade', title: `Botas de Hermes (Nvl ${saveData.upgrades.hermes})`, desc: 'Imán de dracmas más duradero', cost: saveData.upgrades.hermes * 120 },
+    { id: 'athena', type: 'upgrade', title: `Égida de Atenea (Nvl ${saveData.upgrades.athena})`, desc: 'Escudo protector extendido', cost: saveData.upgrades.athena * 120 },
+    { id: 'atalanta', type: 'hero', title: 'Héroe: Atalanta', desc: '+20% velocidad de cambio de carril', cost: 350 },
+    { id: 'aquiles', type: 'hero', title: 'Héroe: Aquiles', desc: 'Inicia cada carrera con Escudo', cost: 600 }
+  ];
+
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    let btnText = `${item.cost} 🪙`;
+    let disabled = saveData.coins < item.cost;
+
+    if (item.type === 'hero' && saveData.heroes[item.id]) {
+      btnText = saveData.selectedHero === item.id ? 'EQUIPADO' : 'EQUIPAR';
+      disabled = saveData.selectedHero === item.id;
+    }
+
+    div.innerHTML = `
+      <div class="shop-info">
+        <h4>${item.title}</h4>
+        <p>${item.desc}</p>
+      </div>
+      <button class="shop-buy" ${disabled ? 'disabled' : ''}>${btnText}</button>
+    `;
+    div.querySelector('button').onclick = () => {
+      if (item.type === 'upgrade') {
+        if (saveData.coins >= item.cost) {
+          saveData.coins -= item.cost;
+          saveData.upgrades[item.id]++;
+          saveGame();
+          renderShop();
+          showToast('¡Bendición mejorada!');
+        }
+      } else {
+        if (saveData.heroes[item.id]) {
+          saveData.selectedHero = item.id;
+          saveGame();
+          renderShop();
+        } else if (saveData.coins >= item.cost) {
+          saveData.coins -= item.cost;
+          saveData.heroes[item.id] = true;
+          saveData.selectedHero = item.id;
+          saveGame();
+          renderShop();
+          showToast('¡Héroe desbloqueado!');
+        }
+      }
+    };
+    list.appendChild(div);
+  });
+}
+
+function watchRewardedAd(type) {
+  showToast('Cargando anuncio de recompensa...');
+  setTimeout(() => {
+    if (type === 'coins') {
+      saveData.coins += 150;
+      saveGame();
+      showToast('¡Recibiste +150 Dracmas!');
+    } else if (type === 'revive') {
+      revivedThisRun = true;
+      document.getElementById('gameOverOverlay').classList.add('hidden');
+      obstacles = obstacles.filter(o => o.z > 400);
+      hasShield = true;
+      activatePower('athena', 4);
+      gameState = 'PLAYING';
+      showToast('¡Revivido con Escudo de Atenea!');
+    }
+  }, 900);
+}
+
+function showMenu() {
+  gameState = 'MENU';
+  document.getElementById('gameOverOverlay').classList.add('hidden');
+  document.getElementById('menuOverlay').classList.remove('hidden');
+  updateMenuUI();
+}
+
+function startGame() {
+  document.getElementById('menuOverlay').classList.add('hidden');
+  document.getElementById('gameOverOverlay').classList.add('hidden');
+  score = 0;
+  runCoins = 0;
+  speed = 11;
+  lane = 1;
+  currentX = 0;
+  playerY = 0;
+  velocityY = 0;
+  isJumping = false;
+  isSliding = false;
+  obstacles = [];
+  coins = [];
+  powerups = [];
+  activePower = null;
+  powerTimer = 0;
+  revivedThisRun = false;
+  hasShield = (saveData.selectedHero === 'aquiles');
+  if (hasShield) activatePower('athena', 5);
+  gameState = 'PLAYING';
+}
+
+function activatePower(type, customDur) {
+  activePower = type;
+  const lvl = saveData.upgrades[type] || 1;
+  powerTimer = customDur || (5 + lvl * 1.5);
+  const banner = document.getElementById('power-banner');
+  banner.style.display = 'block';
+  if (type === 'zeus') banner.textContent = '⚡ IRA DE ZEUS: DESTRUYE OBSTÁCULOS';
+  if (type === 'hermes') banner.textContent = '🪽 ALAS DE HERMES: IMÁN DE DRACMAS';
+  if (type === 'athena') {
+    hasShield = true;
+    banner.textContent = '🛡️ ESCUDO DE ATENEA ACTIVO';
+  }
+}
+
+// Controles
+function moveLeft() { if (gameState === 'PLAYING' && lane > 0) lane--; }
+function moveRight() { if (gameState === 'PLAYING' && lane < 2) lane++; }
+function jump() {
+  if (gameState === 'PLAYING' && !isJumping) {
+    isJumping = true;
+    isSliding = false;
+    velocityY = 17;
+  }
+}
+function slide() {
+  if (gameState === 'PLAYING') {
+    if (isJumping) {
+      velocityY = -22;
+    } else {
+      isSliding = true;
+      slideTimer = 0.65;
+    }
+  }
+}
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft();
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight();
+  if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') jump();
+  if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') slide();
+});
+
+let touchStartX = 0, touchStartY = 0;
+window.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) < 25 && Math.abs(dy) < 25) return;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    dx > 0 ? moveRight() : moveLeft();
+  } else {
+    dy > 0 ? slide() : jump();
+  }
+}, { passive: true });
+
+// Spawner
+let spawnTimer = 0;
+function spawnEntities(dt) {
+  spawnTimer -= dt;
+  if (spawnTimer <= 0) {
+    spawnTimer = Math.max(0.55, 1.35 - speed * 0.025);
+    const obsLane = Math.floor(Math.random() * 3);
+    const types = ['pillar', 'beam', 'fire'];
+    const obsType = types[Math.floor(Math.random() * types.length)];
+    obstacles.push({ lane: obsLane, z: 1000, type: obsType });
+
+    // Monedas en otro carril
+    const coinLane = (obsLane + 1 + Math.floor(Math.random() * 2)) % 3;
+    for (let i = 0; i < 4; i++) {
+      coins.push({ lane: coinLane, z: 1000 + i * 65 });
+    }
+
+    // Powerup ocasional
+    if (Math.random() < 0.16) {
+      const pTypes = ['zeus', 'hermes', 'athena'];
+      powerups.push({
+        lane: Math.floor(Math.random() * 3),
+        z: 1120,
+        type: pTypes[Math.floor(Math.random() * pTypes.length)]
+      });
+    }
+  }
+}
+
+function triggerGameOver() {
+  gameState = 'GAMEOVER';
+  saveData.coins += runCoins;
+  if (score > saveData.bestScore) saveData.bestScore = score;
+  saveGame();
+
+  document.getElementById('finalScore').textContent = `${Math.floor(score)}m`;
+  document.getElementById('finalCoins').textContent = `+${runCoins} Dracmas ganadas`;
+  document.getElementById('reviveBtn').style.display = revivedThisRun ? 'none' : 'inline-block';
+  document.getElementById('gameOverOverlay').classList.remove('hidden');
+}
+
+// Loop Principal
+let lastTime = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function update(dt) {
+  if (gameState !== 'PLAYING') return;
+
+  speed = Math.min(26, speed + dt * 0.25);
+  score += speed * dt * 1.8;
+  roadOffset = (roadOffset + speed * 45 * dt) % 80;
+
+  document.getElementById('scoreVal').textContent = `${Math.floor(score)}m`;
+  document.getElementById('coinVal').textContent = runCoins;
+
+  // Movimiento lateral suave
+  const laneLerp = saveData.selectedHero === 'atalanta' ? 16 : 12;
+  targetX = (lane - 1);
+  currentX += (targetX - currentX) * Math.min(1, laneLerp * dt);
+
+  // Salto y gravedad
+  if (isJumping) {
+    playerY += velocityY * dt * 28;
+    velocityY -= 44 * dt;
+    if (playerY <= 0) {
+      playerY = 0;
+      isJumping = false;
+      velocityY = 0;
+    }
+  }
+
+  // Slide
+  if (isSliding) {
+    slideTimer -= dt;
+    if (slideTimer <= 0) isSliding = false;
+  }
+
+  // Poderes activos
+  if (activePower) {
+    powerTimer -= dt;
+    if (powerTimer <= 0) {
+      activePower = null;
+      hasShield = false;
+      document.getElementById('power-banner').style.display = 'none';
+    }
+  }
+
+  spawnEntities(dt);
+
+  const zMove = speed * 48 * dt;
+
+  // Actualizar obstáculos
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.z -= zMove;
+
+    if (o.z < 55 && o.z > -25 && Math.abs(o.lane - currentX) < 0.42) {
+      let hit = true;
+      if (o.type === 'beam' && isSliding) hit = false;
+      if ((o.type === 'pillar' || o.type === 'fire') && playerY > 48) hit = false;
+
+      if (hit) {
+        if (activePower === 'zeus') {
+          obstacles.splice(i, 1);
+          score += 25;
+          continue;
+        } else if (hasShield) {
+          hasShield = false;
+          activePower = null;
+          document.getElementById('power-banner').style.display = 'none';
+          obstacles.splice(i, 1);
+          showToast('¡El Escudo de Atenea te salvó!');
+          continue;
+        } else {
+          triggerGameOver();
+          return;
+        }
+      }
+    }
+    if (o.z < -120) obstacles.splice(i, 1);
+  }
+
+  // Actualizar monedas
+  for (let i = coins.length - 1; i >= 0; i--) {
+    const c = coins[i];
+    c.z -= zMove;
+    if (activePower === 'hermes' && c.z < 350) {
+      c.lane += (currentX - c.lane) * 8 * dt;
+    }
+    if (c.z < 60 && c.z > -30 && Math.abs(c.lane - currentX) < 0.55) {
+      runCoins += 1;
+      coins.splice(i, 1);
+      continue;
+    }
+    if (c.z < -100) coins.splice(i, 1);
+  }
+
+  // Actualizar powerups
+  for (let i = powerups.length - 1; i >= 0; i--) {
+    const p = powerups[i];
+    p.z -= zMove;
+    if (p.z < 60 && p.z > -30 && Math.abs(p.lane - currentX) < 0.55) {
+      activatePower(p.type);
+      powerups.splice(i, 1);
+      continue;
+    }
+    if (p.z < -100) powerups.splice(i, 1);
+  }
+}
+
+function project(lanePos, z) {
+  const fov = 340;
+  const scale = fov / (fov + z);
+  const horizonY = canvas.height * 0.34;
+  const groundY = canvas.height * 0.86;
+  const screenY = groundY - (groundY - horizonY) * (z / 1000);
+  const roadHalfWidth = canvas.width * 0.38 * scale;
+  const screenX = canvas.width * 0.5 + lanePos * (roadHalfWidth * 0.65);
+  return { x: screenX, y: screenY, scale };
+}
+
+function draw() {
+  // Cielo del Olimpo
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.4);
+  skyGrad.addColorStop(0, '#0f1c3f');
+  skyGrad.addColorStop(1, '#3b5998');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Sol dorado detrás del Olimpo
+  ctx.beginPath();
+  ctx.arc(canvas.width * 0.5, canvas.height * 0.28, 70, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255, 215, 0, 0.28)';
+  ctx.fill();
+
+  const horizonY = canvas.height * 0.34;
+  const groundY = canvas.height;
+
+  // Puente de mármol
+  ctx.beginPath();
+  ctx.moveTo(canvas.width * 0.42, horizonY);
+  ctx.lineTo(canvas.width * 0.58, horizonY);
+  ctx.lineTo(canvas.width * 0.92, groundY);
+  ctx.lineTo(canvas.width * 0.08, groundY);
+  ctx.closePath();
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fill();
+
+  // Líneas de carriles
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
+  ctx.lineWidth = 3;
+  [-0.5, 0.5].forEach(div => {
+    const topP = project(div, 1000);
+    const botP = project(div, 0);
+    ctx.beginPath();
+    ctx.moveTo(topP.x, topP.y);
+    ctx.lineTo(botP.x, botP.y);
+    ctx.stroke();
+  });
+
+  // Dibujar monedas
+  coins.forEach(c => {
+    const p = project(c.lane, c.z);
+    const r = Math.max(4, 15 * p.scale);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y - r, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffd700';
+    ctx.fill();
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  // Dibujar powerups
+  powerups.forEach(pw => {
+    const p = project(pw.lane, pw.z);
+    const r = Math.max(6, 20 * p.scale);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y - r, r, 0, Math.PI * 2);
+    ctx.fillStyle = pw.type === 'zeus' ? '#38bdf8' : pw.type === 'hermes' ? '#4ade80' : '#f472b6';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  // Dibujar obstáculos ordenados por Z
+  const sortedObs = [...obstacles].sort((a, b) => b.z - a.z);
+  sortedObs.forEach(o => {
+    const p = project(o.lane, o.z);
+    const w = 58 * p.scale;
+    const h = 68 * p.scale;
+
+    if (o.type === 'pillar') {
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(p.x - w / 2, p.y - h, w, h);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(p.x - w * 0.55, p.y - h, w * 1.1, h * 0.18);
+    } else if (o.type === 'fire') {
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - h * 0.35, w * 0.48, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y - h * 0.35, w * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (o.type === 'beam') {
+      // Rayo alto (requiere deslizarse por debajo)
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(p.x - w * 0.7, p.y - h * 1.25, w * 1.4, h * 0.45);
+      ctx.fillStyle = '#7dd3fc';
+      ctx.fillRect(p.x - w * 0.7, p.y - h * 1.1, w * 1.4, h * 0.15);
+    }
+  });
+
+  // Dibujar Jugador
+  const playerP = project(currentX, 20);
+  const pW = 46;
+  const pH = isSliding ? 36 : 74;
+  const drawY = playerP.y - playerY;
+
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(playerP.x, playerP.y, 24, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cuerpo del semidiós
+  ctx.fillStyle = saveData.selectedHero === 'aquiles' ? '#dc2626' : saveData.selectedHero === 'atalanta' ? '#059669' : '#2563eb';
+  ctx.fillRect(playerP.x - pW / 2, drawY - pH, pW, pH);
+
+  // Casco dorado
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.arc(playerP.x, drawY - pH, 16, Math.PI, 0);
+  ctx.fill();
+
+  // Aura si hay escudo o poder
+  if (activePower || hasShield) {
+    ctx.strokeStyle = activePower === 'zeus' ? '#38bdf8' : '#ffd700';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(playerP.x, drawY - pH / 2, 46, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
